@@ -6,59 +6,45 @@ import (
 	"os"
 	"sync"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var (
-	dbInstance *gorm.DB
-	dbOnce     sync.Once
+	db     *gorm.DB
+	dbOnce sync.Once
 )
 
-type DBConfig struct {
-	Host     string
-	User     string
-	Password string
-	DBName   string
-	Port     string
-}
-
-func getConfig() DBConfig {
-	return DBConfig{
-		Host:     "postgres",
-		User:     os.Getenv("POSTGRES_USER"),
-		Password: os.Getenv("POSTGRES_PASSWORD"),
-		DBName:   os.Getenv("POSTGRES_DB"),
-		Port:     "5432",
+func init() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
 	}
-}
-
-func connectDB(config DBConfig) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-		config.Host,
-		config.User,
-		config.Password,
-		config.DBName,
-		config.Port)
-
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
 func GetDB() *gorm.DB {
 	dbOnce.Do(func() {
-		config := getConfig()
-		db, err := connectDB(config)
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
+			os.Getenv("DB_HOST"),
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_PASSWORD"),
+			os.Getenv("DB_NAME"),
+			os.Getenv("DB_PORT"))
+
+		log.Println("Connecting with DSN:", dsn) // Debug log
+
+		var err error
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Fatalf("Failed to connect to database: %v", err)
 		}
-		dbInstance = db
 	})
-
-	return dbInstance
+	return db
 }
 
-func CloseDB() error {
-	sqlDB, err := dbInstance.DB()
+func Close() error {
+	sqlDB, err := db.DB()
 	if err != nil {
 		return err
 	}
