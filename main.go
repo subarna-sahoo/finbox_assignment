@@ -1,18 +1,29 @@
 package main
 
 import (
+	"finbox_assignment/database"
+	"finbox_assignment/routers"
+	"finbox_assignment/utils"
 	"log"
 
-	"finbox_assignment/database"
-	"finbox_assignment/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// Initialize database connection
-	_ = database.GetDB()
+	db := database.GetDB()
 
 	// Run migrations
-	utils.AutoMigrate()
+	utils.AutoMigrate(db)
 
-	log.Println("Migrations completed successfully")
+	// Setup Gin router
+	r := gin.Default()
+
+	// Setup routes
+	routers.SetupRoutes(r)
+
+	log.Println("Server starting on :8080")
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
 }
