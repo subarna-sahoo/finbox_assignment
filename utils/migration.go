@@ -1,14 +1,13 @@
 package utils
 
 import (
-	"finbox_assignment/database"
 	"finbox_assignment/models"
 	"log"
+
+	"gorm.io/gorm"
 )
 
-func AutoMigrate() {
-	db := database.GetDB()
-
+func AutoMigrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&models.FeatureFlag{},
 		&models.Dependency{},
